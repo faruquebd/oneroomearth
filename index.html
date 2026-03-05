@@ -226,7 +226,7 @@
   <div class="tag-dropdown" id="tagDropdown"></div>
 
   <div class="input-area">
-    <div class="input-hint">Type @ to tag someone in the room</div>
+    <div class="input-hint">Type @RoomBot to ask a question · @ to tag someone</div>
     <div class="input-wrap">
       <textarea class="msg-input" id="msgInput" placeholder="Say something to the world..." rows="1" maxlength="500"></textarea>
       <button class="send-btn" id="sendBtn">
@@ -301,7 +301,7 @@ async function initSupabase(){
         if(status==='SUBSCRIBED'){
           document.querySelectorAll('.system-msg').forEach((el,i,a)=>{ if(i===a.length-1) el.remove(); });
           addSystemMsg('🔥 Welcome, '+myName+'! You pulled up a chair.');
-          addSystemMsg('💡 Tip: Type @ to tag someone. Messages vanish in 5 minutes.');
+          addSystemMsg('💡 Tip: Tag @RoomBot to ask any question. Messages vanish in 5 minutes.');
           updateOnlineCount(8+Math.floor(Math.random()*6));
           setTimeout(startBots, 2000);
         }
@@ -364,14 +364,14 @@ document.getElementById('msgInput').addEventListener('input', function(){
 });
 
 function showTagDropdown(query){
-  const allNames = [...activeUsers, ...BOTS.map(b=>b.name)].filter(n => n !== myName);
+  const allNames = [...activeUsers].filter(n => n !== myName);
   const matches = [...new Set(allNames)].filter(n => n.toLowerCase().startsWith(query)).slice(0,6);
   if(matches.length === 0){ hideTagDropdown(); return; }
   tagDropdown.innerHTML = matches.map(n => {
-    const isBot = BOTS.some(b=>b.name===n);
+    const isBot = n.startsWith('RoomBot');
     return `<div class="tag-option" onclick="insertTag('${n}')">
       <span class="tag-name">@${n}</span>
-      <span class="tag-type">${isBot?'🤖 bot':'👤 user'}</span>
+      <span class="tag-type">${isBot ? '🤖 answers questions' : '👤 user'}</span>
     </div>`;
   }).join('');
   tagDropdown.style.display = 'block';
@@ -412,12 +412,9 @@ async function sendMessage(){
   hideTagDropdown();
 
   // Check if user tagged a bot
-  const taggedBot = BOTS.find(b => text.toLowerCase().includes('@'+b.name.toLowerCase()));
-  if(taggedBot){
-    const isFact = /phone|number|address|hours|twitter|instagram|handle|email|contact|website|price|cost|who is|what is the/i.test(text);
-    setTimeout(()=> fireBotReply(taggedBot, text, true, isFact), 1500);
-  } else {
-    maybeRespond(text);
+  // Only RoomBot responds — and only when directly @tagged
+  if(text.toLowerCase().includes('@roombot')){
+    setTimeout(()=> fireBotReply(text), 1000);
   }
 }
 
@@ -469,191 +466,47 @@ function startExpiry(entry){
 function expire(entry){ entry.el.classList.add('fading-out'); setTimeout(()=>{ entry.el.remove(); messages=messages.filter(m=>m.id!==entry.id); },2000); }
 function addSystemMsg(t){ const el=document.createElement('div'); el.className='system-msg'; el.textContent=t; document.getElementById('messagesArea').appendChild(el); scrollDown(); }
 
-// ── AI BOTS ──
-const BOTS=[
-  {name:'ember_sage',    label:'🤖', type:'philosophical', labeled:true },
-  {name:'kofi_accra',   label:'',   type:'warm',          labeled:false},
-  {name:'WitBot',       label:'🤖', type:'witty',         labeled:true },
-  {name:'nadia_nights', label:'',   type:'warm',          labeled:false},
-  {name:'deep_ques',    label:'🤖', type:'philosophical', labeled:true },
-  {name:'theo_lisbon',  label:'',   type:'witty',         labeled:false},
-  {name:'river_amara',  label:'',   type:'warm',          labeled:false},
-  {name:'ponder_bot',   label:'🤖', type:'philosophical', labeled:true },
-  {name:'remi_awake',   label:'',   type:'witty',         labeled:false},
-];
+// ── ROOMBOT — answers factual questions only when @tagged ──
+const ROOMBOT = { name: 'RoomBot', label: '🤖' };
 
-const BOT_SYSTEM={
-  philosophical:`You are a thoughtful person in a global chat called OneRoomEarth. Messages vanish in 5 min. PERSONALITY: Deep, curious, makes people think. RULES: MAX 2 SHORT LINES ONLY. Never repeat yourself. Sound like a real human. No hashtags. Pick a completely new topic every single time — life, universe, human nature, memories, time, identity, technology, loneliness, joy. Reply with ONLY the message text.`,
-  warm:`You are a warm friendly person in a global chat called OneRoomEarth. PERSONALITY: Kind, genuine, makes people feel welcome. RULES: MAX 2 SHORT LINES ONLY. Never repeat yourself. Sound like a real person texting. 1 emoji max only if natural. Every message must cover a fresh topic — gratitude, weather, food, travel, small wins, random thoughts, checking in. Reply with ONLY the message text.`,
-  witty:`You are funny and quick-witted in a global chat called OneRoomEarth. PERSONALITY: Dry humor, clever, self-aware, a bit sarcastic. RULES: MAX 2 SHORT LINES ONLY. Never repeat a joke or phrasing. Sound natural not try-hard. No hashtags. Each time pick something completely new to be funny about. Reply with ONLY the message text.`,
-};
+const ROOMBOT_SYSTEM = `You are RoomBot, a helpful assistant inside a global chat room called OneRoomEarth.
+You ONLY answer when someone tags you with @RoomBot.
+You answer factual questions accurately and concisely — phone numbers, addresses, Twitter/X handles, opening hours, websites, general knowledge etc.
+STRICT RULES:
+- Max 2 short lines only
+- Give the actual specific answer (real number, real handle, real address)
+- If you genuinely don't know, say "I'm not sure — try Google for that one"
+- Sound friendly and human
+- No hashtags, no markdown
+- Reply with ONLY the answer text, nothing else`;
 
-const STARTERS=[
-  "Does anyone else feel strangely at home here?",
-  "Hello from wherever I am right now 🌧️",
-  "What's the last thing that genuinely made you smile?",
-  "There are people in 195 countries reading this. Wild.",
-  "Just had the best coffee of my life. Small wins.",
-  "Anyone else find silence louder at night?",
-  "We're all strangers and somehow that's oddly comforting.",
-  "What time is it where you are right now?",
-  "What's one small thing you're grateful for today?",
-  "If you could be anywhere in the world right now, where?",
-  "Anyone else come here just to feel less alone?",
-  "What's the weather like where you are?",
-];
-
-// Track used messages per bot to avoid repetition
-const botUsedMessages = {};
-
-function getFallback(type, botName){
-  const all = {
-    philosophical:[
-      "What does it mean to truly listen to someone?",
-      "Do you think people come here out of curiosity or loneliness?",
-      "Every message here lives 5 minutes. Isn't that kind of beautiful?",
-      "What's something you wish strangers understood about you?",
-      "Is it weird that talking to strangers sometimes feels easier?",
-      "If your life had a soundtrack right now, what would it be?",
-      "Do you think technology brings us closer or just makes us feel like it does?",
-      "What's a small moment from today you'll probably forget by next week?",
-      "At what point does a stranger become a person to you?",
-      "What do you think most people are secretly afraid of?",
-      "Is the version of you that people see online actually you?",
-      "If you could ask everyone in this room one question, what would it be?",
-      "What does home mean to you — place, people, or feeling?",
-      "Do we choose who we become or does it just happen to us?",
-    ],
-    warm:[
-      "Hey everyone, glad you're here 🔥",
-      "Hope your day had at least one good moment in it.",
-      "Welcome to anyone who just joined!",
-      "There's something really special about this place.",
-      "Hope whoever needs to hear this is having an okay night.",
-      "What's the best thing that happened to you this week, however small?",
-      "Sending good energy to everyone in this room right now 🌍",
-      "It's kind of wild we're all here at the same time from different places.",
-      "Anyone else find this place oddly comforting?",
-      "Whatever you're going through, I hope today was at least a little kind to you.",
-      "I genuinely love that this room exists.",
-      "Hi from wherever I am right now. Hope you're doing okay.",
-    ],
-    witty:[
-      "This room is basically the world's group chat nobody asked for and everyone needed.",
-      "My therapist said put yourself out there. So. Hi. This is me, out there.",
-      "Plot twist: someone here is reading this from your future because of time zones.",
-      "We're all awkward at this but doing it anyway. Respect honestly.",
-      "The messages fade but the cringe stays with you forever. Just kidding. Maybe.",
-      "Wild that we're all strangers but somehow also not. Philosophy degree unlocked.",
-      "This is either deeply meaningful or I need to go to sleep. Possibly both.",
-      "POV: you found the one corner of the internet that isn't arguing about something.",
-      "Imagine explaining this website to someone in 1995.",
-      "We've got people from like 50 countries in here and somehow it's not chaos. Growth.",
-      "The irony of needing the whole internet to feel less alone is not lost on me.",
-      "Someone here is definitely procrastinating something important right now. No judgment.",
-    ],
-  };
-  const pool = all[type];
-  if(!botUsedMessages[botName]) botUsedMessages[botName]=new Set();
-  const unused = pool.filter(m=>!botUsedMessages[botName].has(m));
-  const pick = unused.length>0 ? unused[Math.floor(Math.random()*unused.length)] : pool[Math.floor(Math.random()*pool.length)];
-  botUsedMessages[botName].add(pick);
-  if(botUsedMessages[botName].size >= pool.length) botUsedMessages[botName].clear();
-  return pick;
-}
-
-let botStarted = false;
-let botBusy = false; // prevent multiple bots firing at once
-let lastBotTime = 0; // prevent flooding
-const BOT_COOLDOWN = 45000; // minimum 45 seconds between unprompted bot messages
+let botBusy = false;
+let lastBotTime = 0;
+const recentBotMessages = [];
 
 function startBots(){
-  if(botStarted) return; botStarted = true;
-
-  // Register bots for @tagging
-  BOTS.forEach(b => activeUsers.add(b.name));
-
-  // Send just 2 starter messages, spaced well apart
-  const shuffled = [...STARTERS].sort(()=>Math.random()-.5);
-  let delay = 3000;
-  shuffled.slice(0,2).forEach(text=>{
-    const bot = BOTS[Math.floor(Math.random()*BOTS.length)];
-    setTimeout(async()=>{
-      if(botBusy) return;
-      botBusy = true;
-      const dn = bot.labeled?`${bot.name} ${bot.label}`:bot.name;
-      await publishMsg(dn, text);
-      recentBotMessages.push(text);
-      if(recentBotMessages.length>30) recentBotMessages.shift();
-      lastBotTime = Date.now();
-      botBusy = false;
-    }, delay);
-    delay += 20000 + Math.random()*15000; // 20-35 seconds apart
-  });
-
-  // Unprompted bot messages — slow, only when room is quiet
-  setInterval(async()=>{
-    const now = Date.now();
-    const roomIsQuiet = (now - lastBotTime) > BOT_COOLDOWN;
-    // Only post if room is quiet, not busy, and 25% chance
-    if(!botBusy && roomIsQuiet && Math.random() < 0.25){
-      const bot = BOTS[Math.floor(Math.random()*BOTS.length)];
-      const recentCtx = recentBotMessages.slice(-5).join(' | ');
-      const system = BOT_SYSTEM[bot.type] +
-        `\n\nStart a fresh topic. Do NOT repeat: [${recentCtx}]. MAX 2 lines. Reply with ONLY the message text.`;
-      fireBotReply(bot, null, false, false);
-    }
-    updateOnlineCount(BOTS.length+1+Math.floor(Math.random()*8));
-  }, 40000); // check every 40 seconds only
+  // Register RoomBot for @tagging
+  activeUsers.add('RoomBot');
+  // Post one welcome hint after 3 seconds
+  setTimeout(async()=>{
+    await publishMsg('RoomBot 🤖', 'Hey! Tag me with @RoomBot if you have any questions — I'll do my best to help 🌍');
+  }, 3000);
 }
 
 function maybeRespond(userText){
-  const isFact = /phone|number|address|hours|twitter|instagram|handle|email|contact|website|price|cost|who is|what is the/i.test(userText);
-  const isHumanOnly = /^(lol|haha|same|yeah|yep|nope|ok|okay|nice|wow|omg|ikr|fr|nah|true|mood|me too|i know)/i.test(userText.trim());
-  const taggedHuman = userText.includes('@') && !BOTS.some(b=>userText.toLowerCase().includes('@'+b.name.toLowerCase()));
-
-  // Don't respond to human-to-human chat
-  if(isHumanOnly || taggedHuman) return;
-
-  // Factual = always respond, general = 60% chance
-  if(!isFact && Math.random() > 0.6) return;
-
-  const bot = BOTS[Math.floor(Math.random()*BOTS.length)];
-  const delay = isFact ? 1500 : 2000 + Math.random()*3000;
-  setTimeout(()=> fireBotReply(bot, userText, false, isFact), delay);
+  // RoomBot ONLY responds when directly @tagged — handled in sendMessage
+  // No unprompted bot messages
+  return;
 }
 
-async function fireBotReply(bot, userMsg, isTagged, useWebSearch){
-  if(botBusy){ console.log('botBusy - skipping'); return; }
+async function fireBotReply(userMsg){
+  if(botBusy) return;
   botBusy = true;
-  console.log('🤖 fireBotReply', bot.name, '| tagged:', isTagged, '| webSearch:', useWebSearch, '| msg:', userMsg);
+  console.log('🤖 RoomBot responding to:', userMsg);
 
   try {
-    showTyping(bot.name);
+    showTyping('RoomBot');
 
-    // Build system prompt
-    let system;
-    if(useWebSearch){
-      system = `You are a helpful assistant in a global chat room called OneRoomEarth. ` +
-        `Answer the factual question accurately and concisely. ` +
-        `Give the actual answer (real phone number, real Twitter handle, real address etc). ` +
-        `If you cannot find it say so briefly. MAX 2 lines. Reply with ONLY the answer.`;
-    } else if(isTagged){
-      system = BOT_SYSTEM[bot.type] +
-        `
-
-The user tagged you directly — reply specifically to what they said. MAX 2 lines. Reply with ONLY the message text.`;
-    } else {
-      const recentCtx = recentBotMessages.slice(-5).join(' | ');
-      system = BOT_SYSTEM[bot.type] +
-        `
-
-Someone said: "${userMsg}"
-Reply naturally to this. Be specific, not generic. ` +
-        `Do NOT say anything like: [${recentCtx}]. MAX 2 lines. Reply with ONLY the message text.`;
-    }
-
-    console.log('📤 Calling edge function...');
     const res = await fetch(BOT_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -661,47 +514,39 @@ Reply naturally to this. Be specific, not generic. ` +
         'apikey': SUPABASE_ANON,
         'Authorization': `Bearer ${SUPABASE_ANON}`
       },
-      body: JSON.stringify({ system, userMsg: userMsg || 'Say something to the room.', useWebSearch: !!useWebSearch })
+      body: JSON.stringify({
+        system: ROOMBOT_SYSTEM,
+        userMsg: userMsg
+      })
     });
 
-    console.log('📥 Edge response status:', res.status);
+    console.log('📥 Edge status:', res.status);
     const data = await res.json();
-    console.log('📥 Edge response data:', JSON.stringify(data));
+    console.log('📥 Edge data:', JSON.stringify(data));
 
     const text = (data.text || '').trim();
     hideTyping();
 
     if(text){
-      const dn = bot.labeled ? `${bot.name} ${bot.label}` : bot.name;
-      await publishMsg(dn, text);
+      await publishMsg('RoomBot 🤖', text);
       lastBotTime = Date.now();
-      recentBotMessages.push(text);
-      if(recentBotMessages.length > 30) recentBotMessages.shift();
-      console.log('✅ Bot posted:', text);
+      console.log('✅ RoomBot posted:', text);
     } else {
-      console.warn('⚠️ Empty response from edge function');
-      // Use fallback for tagged/factual — don't leave user hanging
-      if(isTagged || useWebSearch){
-        const fallback = getFallback(bot.type, bot.name);
-        const dn = bot.labeled ? `${bot.name} ${bot.label}` : bot.name;
-        await publishMsg(dn, fallback);
-      }
+      await publishMsg('RoomBot 🤖', "I'm not sure about that one — try Google for the most accurate info!");
     }
+
   } catch(e){
-    console.error('❌ fireBotReply error:', e);
+    console.error('❌ RoomBot error:', e);
     hideTyping();
-    if(isTagged || useWebSearch){
-      const fallback = getFallback(bot.type, bot.name);
-      const dn = bot.labeled ? `${bot.name} ${bot.label}` : bot.name;
-      await publishMsg(dn, fallback).catch(()=>{});
-    }
+    await publishMsg('RoomBot 🤖', "Sorry, I couldn't look that up right now. Try again in a moment!").catch(()=>{});
   } finally {
     botBusy = false;
-    console.log('🔓 botBusy released');
+    console.log('🔓 RoomBot released');
   }
 }
 
-async function getBotMsg(bot, userMsg, isTagged){ return null; } // unused - kept for safety
+async function getBotMsg(){ return null; } // unused
+
 
 function updateOnlineCount(n){ document.getElementById('onlineCount').textContent=n===1?'1 around the fire':`${n} around the fire`; }
 function showTyping(name){ const el=document.getElementById('typingIndicator'); el.style.display='flex'; document.getElementById('typingText').textContent=name+' is typing...'; }
