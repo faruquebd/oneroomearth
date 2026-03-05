@@ -251,6 +251,8 @@ let recentBotMessages = []; // track to avoid repetition
 let activeUsers = new Set(); // track who's in the room for @tagging
 
 // Age gate
+document.addEventListener('DOMContentLoaded', ()=>{
+
 const ageCheck=document.getElementById('ageCheck'), rulesCheck=document.getElementById('rulesCheck'), ageBtn=document.getElementById('ageBtn');
 function refreshBtn(){ ageBtn.classList.toggle('ready', ageCheck.checked && rulesCheck.checked); }
 ageCheck.addEventListener('change',refreshBtn); rulesCheck.addEventListener('change',refreshBtn);
@@ -576,6 +578,8 @@ async function installPWA(){
   deferredPrompt=null;
   if(outcome==='accepted') addSystemMsg('🎉 App installed! Find it on your home screen.');
 }
+
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
