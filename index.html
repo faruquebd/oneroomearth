@@ -240,6 +240,41 @@
 <button class="scroll-btn" id="scrollBtn">↓</button>
 
 <script>
+// Global functions — must be outside DOMContentLoaded as they're called from onclick attributes
+let tagStart = -1;
+let tagQuery = '';
+
+function insertTag(name){
+  const input = document.getElementById('msgInput');
+  if(!input) return;
+  const val = input.value;
+  const pos = input.selectionStart;
+  const before = val.slice(0, tagStart < 0 ? pos : tagStart);
+  const after = val.slice(pos);
+  input.value = before + '@' + name + ' ' + after;
+  input.focus();
+  const newPos = before.length + name.length + 2;
+  input.setSelectionRange(newPos, newPos);
+  const dd = document.getElementById('tagDropdown');
+  if(dd) dd.style.display = 'none';
+  tagStart = -1; tagQuery = '';
+}
+
+function hideTagDropdown(){
+  const dd = document.getElementById('tagDropdown');
+  if(dd) dd.style.display = 'none';
+  tagStart = -1; tagQuery = '';
+}
+
+async function installPWA(){
+  if(!window._deferredPrompt) return;
+  window._deferredPrompt.prompt();
+  const{outcome} = await window._deferredPrompt.userChoice;
+  window._deferredPrompt = null;
+  const b = document.getElementById('installBanner');
+  if(b) b.remove();
+}
+
 const SUPABASE_URL  = 'https://szavjquwqemgpezubuqy.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_96qX5ZrBiI_ckscQRor-Vw_HcLhTg8j';
 const BOT_ENDPOINT  = `${SUPABASE_URL}/functions/v1/chat-bot`;
@@ -346,7 +381,6 @@ function triggerBlock(){
 
 // ── @TAG AUTOCOMPLETE ──
 const tagDropdown = document.getElementById('tagDropdown');
-let tagQuery = '', tagStart = -1;
 
 document.getElementById('msgInput').addEventListener('input', function(){
   document.getElementById('charHint').textContent=`${500-this.value.length} characters remaining`;
@@ -366,11 +400,21 @@ document.getElementById('msgInput').addEventListener('input', function(){
 });
 
 function showTagDropdown(query){
-  const allNames = [...activeUsers].filter(n => n !== myName);
-  const matches = [...new Set(allNames)].filter(n => n.toLowerCase().startsWith(query)).slice(0,6);
-  if(matches.length === 0){ hideTagDropdown(); return; }
-  tagDropdown.innerHTML = matches.map(n => {
-    const isBot = n.startsWith('RoomBot');
+  // Always include RoomBot, plus real users (deduplicated, no emoji variants)
+  const cleanUsers = [...activeUsers]
+    .filter(n => n !== myName && n !== 'RoomBot 🤖') // remove emoji variant
+    .filter(n => n.toLowerCase().startsWith(query));
+  
+  // Always add RoomBot at top if query matches
+  const names = [];
+  if('roombot'.startsWith(query.toLowerCase())) names.push('RoomBot');
+  names.push(...cleanUsers.filter(n => n !== 'RoomBot').slice(0,5));
+
+  if(names.length === 0){ hideTagDropdown(); return; }
+  
+  const tagDropdown = document.getElementById('tagDropdown');
+  tagDropdown.innerHTML = names.map(n => {
+    const isBot = n === 'RoomBot';
     return `<div class="tag-option" onclick="insertTag('${n}')">
       <span class="tag-name">@${n}</span>
       <span class="tag-type">${isBot ? '🤖 answers questions' : '👤 user'}</span>
@@ -379,7 +423,6 @@ function showTagDropdown(query){
   tagDropdown.style.display = 'block';
 }
 
-function hideTagDropdown(){ tagDropdown.style.display='none'; tagQuery=''; tagStart=-1; }
 
 document.getElementById('msgInput').addEventListener('keydown', e=>{
   if(e.key==='Escape') hideTagDropdown();
@@ -474,7 +517,7 @@ let lastBotTime = 0;
 
 function startBots(){
   // Register RoomBot for @tagging
-  activeUsers.add('RoomBot');
+  activeUsers.add('RoomBot'); // keep clean name for tagging
   // Post one welcome hint after 3 seconds
   setTimeout(async()=>{
     await publishMsg('RoomBot 🤖', "Hey! Tag me @RoomBot with any question and I will do my best to help 🌍");
@@ -548,8 +591,8 @@ function scrollDown(){ if(area.scrollHeight-area.scrollTop-area.clientHeight<200
 // PWA
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('/sw.js').catch(e=>console.log('SW:',e)); }); }
 
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; setTimeout(showInstallBanner,45000); });
+window._deferredPrompt = null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); window._deferredPrompt=e; setTimeout(showInstallBanner,45000); });
 function showInstallBanner(){
   if(!deferredPrompt) return;
   const b=document.createElement('div');
@@ -559,27 +602,7 @@ function showInstallBanner(){
 }
 }); // end DOMContentLoaded
 
-// These must be global — called from onclick attributes in dynamic HTML
-function insertTag(name){
-  const input = document.getElementById('msgInput');
-  const val = input.value;
-  const pos = input.selectionStart;
-  const before = val.slice(0, tagStart);
-  const after = val.slice(pos);
-  input.value = before + '@' + name + ' ' + after;
-  input.focus();
-  const newPos = before.length + name.length + 2;
-  input.setSelectionRange(newPos, newPos);
-  hideTagDropdown();
-}
 
-async function installPWA(){
-  if(!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const{outcome}=await deferredPrompt.userChoice;
-  deferredPrompt=null;
-  if(outcome==='accepted') addSystemMsg('🎉 App installed! Find it on your home screen.');
-}
 </script>
 </body>
 </html>
