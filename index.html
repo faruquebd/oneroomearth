@@ -381,19 +381,6 @@ function showTagDropdown(query){
 
 function hideTagDropdown(){ tagDropdown.style.display='none'; tagQuery=''; tagStart=-1; }
 
-function insertTag(name){
-  const input = document.getElementById('msgInput');
-  const val = input.value;
-  const pos = input.selectionStart;
-  const before = val.slice(0, tagStart);
-  const after = val.slice(pos);
-  input.value = before + '@' + name + ' ' + after;
-  input.focus();
-  const newPos = before.length + name.length + 2;
-  input.setSelectionRange(newPos, newPos);
-  hideTagDropdown();
-}
-
 document.getElementById('msgInput').addEventListener('keydown', e=>{
   if(e.key==='Escape') hideTagDropdown();
   if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); hideTagDropdown(); sendMessage(); }
@@ -570,6 +557,22 @@ function showInstallBanner(){
   b.innerHTML=`<span style="font-size:1.4rem">📲</span><span style="flex:1">Install <strong>OneRoomEarth</strong> on your home screen!</span><button onclick="installPWA()" style="background:var(--accent);border:none;border-radius:8px;padding:0.45rem 0.8rem;color:white;font-weight:600;cursor:pointer;font-size:0.82rem;white-space:nowrap;">Install</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;">✕</button>`;
   document.body.appendChild(b);
 }
+}); // end DOMContentLoaded
+
+// These must be global — called from onclick attributes in dynamic HTML
+function insertTag(name){
+  const input = document.getElementById('msgInput');
+  const val = input.value;
+  const pos = input.selectionStart;
+  const before = val.slice(0, tagStart);
+  const after = val.slice(pos);
+  input.value = before + '@' + name + ' ' + after;
+  input.focus();
+  const newPos = before.length + name.length + 2;
+  input.setSelectionRange(newPos, newPos);
+  hideTagDropdown();
+}
+
 async function installPWA(){
   if(!deferredPrompt) return;
   deferredPrompt.prompt();
@@ -577,8 +580,6 @@ async function installPWA(){
   deferredPrompt=null;
   if(outcome==='accepted') addSystemMsg('🎉 App installed! Find it on your home screen.');
 }
-
-}); // end DOMContentLoaded
 </script>
 </body>
 </html>
