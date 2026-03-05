@@ -621,69 +621,98 @@ function startBots(){
 }
 
 function maybeRespond(userText){
-  // Only 50% chance, never if a bot is already responding
-  if(botBusy || Math.random() > 0.5) return;
+  if(botBusy) return;
+
+  // Factual questions always get a response, faster
+  const isFact = /\b(phone number|phone no|contact number|address of|opening hours|hours of|twitter handle|instagram handle|website of|email of|where is|price of|cost of|how much is|what is the number|number for|handle of|who is)\b/i.test(userText);
+
+  // General chat — only 50% chance
+  if(!isFact && Math.random() > 0.5) return;
+
   const bot = BOTS[Math.floor(Math.random()*BOTS.length)];
-  const delay = 3000 + Math.random()*5000; // 3-8 seconds feels natural
+  const delay = isFact ? 1500 : 3000 + Math.random()*5000;
+
   setTimeout(async()=>{
-    if(botBusy) return; // double-check
+    if(botBusy) return;
     botBusy = true;
-    showTyping(bot.name);
-    await new Promise(r=>setTimeout(r, 1500+Math.random()*1500));
-    hideTyping();
     const text = await getBotMsg(bot, userText, false);
-    const dn = bot.labeled?`${bot.name} ${bot.label}`:bot.name;
-    await publishMsg(dn, text);
-    lastBotTime = Date.now();
+    if(text){
+      showTyping(bot.name);
+      await new Promise(r=>setTimeout(r, isFact ? 1000 : 1500+Math.random()*1500));
+      hideTyping();
+      const dn = bot.labeled?`${bot.name} ${bot.label}`:bot.name;
+      await publishMsg(dn, text);
+      lastBotTime = Date.now();
+    }
     botBusy = false;
   }, delay);
 }
 
-// Detect if message is a factual/lookup question
-function isFactualQuery(text){
-  return /\b(what is|what's|who is|who's|phone number|address|email|website|twitter|instagram|handle|contact|hours|open|located|where is|how do i|number for|website for)\b/i.test(text);
-}
-
+// ── SMART MESSAGE ROUTER ──
+// One single API call does everything: classify + respond
 async function getBotMsg(bot, userMsg=null, isTagged=false){
-  const recentContext = recentBotMessages.slice(-5).join(' | ');
+  const recentContext = recentBotMessages.slice(-6).join(' || ');
 
-  let systemPrompt, messageContent;
+  let systemPrompt, useWebSearch = false;
 
-  if(userMsg && isFactualQuery(userMsg)){
-    // Web search query — use a helpful factual assistant prompt
-    systemPrompt = `You are a helpful assistant in a global chat room called OneRoomEarth. Someone asked a factual question. Use web search to find the answer and reply conversationally in max 2 short lines. If you find the answer, share it clearly. If not, say you couldn't find it. No hashtags. Reply with ONLY the message text.`;
-    messageContent = userMsg;
+  if(!userMsg){
+    // Unprompted — bot starts fresh topic
+    systemPrompt = BOT_SYSTEM[bot.type] +
+      `\n\nStart a completely fresh topic. Do NOT repeat or be similar to any of these recent messages: [${recentContext}].` +
+      `\nMAX 2 SHORT LINES. Reply with ONLY the message text, nothing else.`;
+
+  } else if(isTagged){
+    // User directly @tagged this bot
+    useWebSearch = /phone|number|address|hours|website|twitter|instagram|handle|email|contact|price|cost|how much|located|where is|who is/i.test(userMsg);
+    systemPrompt = `You are a helpful assistant called ${bot.name} in a global chat room called OneRoomEarth.` +
+      `\nThe user tagged you directly — you MUST reply to them.` +
+      (useWebSearch
+        ? `\nThey asked a factual question. Give the real accurate answer. If you know it, say it. If not, say you're not sure.`
+        : `\nRespond naturally to what they said, in your personality: ${bot.type}.`) +
+      `\nSTRICT: Max 2 short lines only. Sound like a human. Reply with ONLY the message text.`;
+
   } else {
-    // Regular conversational bot response
-    const tagInstruction = isTagged
-      ? ` The user directly tagged you (@${bot.name}) — you MUST respond directly and specifically to what they said.`
-      : '';
-    const replyInstruction = userMsg
-      ? ` User said: "${userMsg}" — respond directly to this in max 2 lines.`
-      : ` Start a fresh topic. Do NOT repeat or echo any of these recent messages: [${recentContext}]. Be creative and different each time.`;
+    // Someone posted to room — decide in one shot whether + how to respond
+    useWebSearch = /\b(phone number|phone no|contact number|address of|opening hours|hours of|twitter handle|instagram handle|website of|email of|where is|price of|cost of|how much is|what is the number|number for|handle of|who is)\b/i.test(userMsg);
 
-    systemPrompt = BOT_SYSTEM[bot.type] + tagInstruction + replyInstruction;
-    messageContent = userMsg || 'Post a new message to the room.';
+    if(useWebSearch){
+      // Clear factual question — answer it with web search
+      systemPrompt = `You are a helpful assistant in a global chat room called OneRoomEarth.` +
+        `\nSomeone asked a factual question. Search the web and give the real specific answer (actual phone number, actual Twitter handle, actual address etc).` +
+        `\nBe concise and accurate. If you genuinely cannot find it, say so in one line.` +
+        `\nSTRICT: Max 2 short lines. Reply with ONLY the answer text, nothing else.`;
+    } else {
+      // Check if clearly human-to-human (skip bot response)
+      const humanToHuman = /^(lol|haha|same|yeah|yes|no|ok|okay|sure|nice|wow|omg|ikr|fr|nah|agreed|exactly|true|facts|mood|same here|me too|i know|right\?)/i.test(userMsg.trim());
+      const hasHumanTag = userMsg.includes('@') && !BOTS.some(b => userMsg.includes('@'+b.name));
+      if(humanToHuman || hasHumanTag) return null; // bot stays silent
+
+      // General chat — bot responds in character
+      systemPrompt = BOT_SYSTEM[bot.type] +
+        `\n\nSomeone in the room said: "${userMsg}"` +
+        `\nRespond naturally and specifically to what they said. Don't be generic.` +
+        `\nSTRICT: Max 2 short lines only. Reply with ONLY the message text, nothing else.`;
+    }
   }
 
   try {
     const res = await fetch(BOT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-      body: JSON.stringify({
-        system: systemPrompt,
-        userMsg: messageContent,
-        useWebSearch: isFactualQuery(userMsg||'')
-      })
+      body: JSON.stringify({ system: systemPrompt, userMsg: userMsg || 'Post a new message.', useWebSearch })
     });
     if(!res.ok) throw new Error('edge error');
     const data = await res.json();
     const text = (data.text||'').trim();
-    if(!text || recentBotMessages.includes(text)) return getFallback(bot.type, bot.name);
+    if(!text) return getFallback(bot.type, bot.name);
+    if(recentBotMessages.includes(text)) return getFallback(bot.type, bot.name);
     recentBotMessages.push(text);
-    if(recentBotMessages.length>20) recentBotMessages.shift();
+    if(recentBotMessages.length>30) recentBotMessages.shift();
     return text;
-  } catch { return getFallback(bot.type, bot.name); }
+  } catch(e) {
+    console.error('getBotMsg error:', e);
+    return isTagged ? getFallback(bot.type, bot.name) : null;
+  }
 }
 
 function updateOnlineCount(n){ document.getElementById('onlineCount').textContent=n===1?'1 around the fire':`${n} around the fire`; }
