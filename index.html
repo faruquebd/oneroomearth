@@ -226,7 +226,7 @@
   <div class="tag-dropdown" id="tagDropdown"></div>
 
   <div class="input-area">
-    <div class="input-hint">Type @RoomBot to ask a question · @ to tag someone</div>
+    <div class="input-hint">Type @ to tag someone in the room</div>
     <div class="input-wrap">
       <textarea class="msg-input" id="msgInput" placeholder="Say something to the world..." rows="1" maxlength="500"></textarea>
       <button class="send-btn" id="sendBtn">
@@ -338,7 +338,7 @@ async function initSupabase(){
         if(status==='SUBSCRIBED'){
           document.querySelectorAll('.system-msg').forEach((el,i,a)=>{ if(i===a.length-1) el.remove(); });
           addSystemMsg('🔥 Welcome, '+myName+'! You pulled up a chair.');
-          addSystemMsg('💡 Tip: Tag @RoomBot to ask any question. Messages vanish in 5 minutes.');
+          addSystemMsg('💡 Tip: Type @ to tag someone. Messages vanish in 5 minutes.');
           updateOnlineCount(8+Math.floor(Math.random()*6));
           setTimeout(startBots, 2000);
         }
@@ -400,26 +400,18 @@ document.getElementById('msgInput').addEventListener('input', function(){
 });
 
 function showTagDropdown(query){
-  // Always include RoomBot, plus real users (deduplicated, no emoji variants)
-  const cleanUsers = [...activeUsers]
-    .filter(n => n !== myName && n !== 'RoomBot 🤖') // remove emoji variant
-    .filter(n => n.toLowerCase().startsWith(query));
-  
-  // Always add RoomBot at top if query matches
-  const names = [];
-  if('roombot'.startsWith(query.toLowerCase())) names.push('RoomBot');
-  names.push(...cleanUsers.filter(n => n !== 'RoomBot').slice(0,5));
-
-  if(names.length === 0){ hideTagDropdown(); return; }
-  
+  const matches = [...activeUsers]
+    .filter(n => n !== myName && !n.includes('🤖'))
+    .filter(n => n.toLowerCase().startsWith(query))
+    .slice(0, 6);
+  if(matches.length === 0){ hideTagDropdown(); return; }
   const tagDropdown = document.getElementById('tagDropdown');
-  tagDropdown.innerHTML = names.map(n => {
-    const isBot = n === 'RoomBot';
-    return `<div class="tag-option" onclick="insertTag('${n}')">
+  tagDropdown.innerHTML = matches.map(n =>
+    `<div class="tag-option" onclick="insertTag('${n}')">
       <span class="tag-name">@${n}</span>
-      <span class="tag-type">${isBot ? '🤖 answers questions' : '👤 user'}</span>
-    </div>`;
-  }).join('');
+      <span class="tag-type">👤 user</span>
+    </div>`
+  ).join('');
   tagDropdown.style.display = 'block';
 }
 
@@ -444,10 +436,7 @@ async function sendMessage(){
   hideTagDropdown();
 
   // Check if user tagged a bot
-  // Only RoomBot responds — and only when directly @tagged
-  if(text.toLowerCase().includes('@roombot')){
-    setTimeout(()=> fireBotReply(text), 1000);
-  }
+  // Pure human chat — no bots
 }
 
 // ── MESSAGES UI ──
@@ -498,85 +487,14 @@ function startExpiry(entry){
 function expire(entry){ entry.el.classList.add('fading-out'); setTimeout(()=>{ entry.el.remove(); messages=messages.filter(m=>m.id!==entry.id); },2000); }
 function addSystemMsg(t){ const el=document.createElement('div'); el.className='system-msg'; el.textContent=t; document.getElementById('messagesArea').appendChild(el); scrollDown(); }
 
-// ── ROOMBOT — answers factual questions only when @tagged ──
-const ROOMBOT = { name: 'RoomBot', label: '🤖' };
-
-const ROOMBOT_SYSTEM = `You are RoomBot, a helpful assistant inside a global chat room called OneRoomEarth.
-You ONLY answer when someone tags you with @RoomBot.
-You answer factual questions accurately and concisely — phone numbers, addresses, Twitter/X handles, opening hours, websites, general knowledge etc.
-STRICT RULES:
-- Max 2 short lines only
-- Give the actual specific answer (real number, real handle, real address)
-- If you genuinely don't know, say "I'm not sure — try Google for that one"
-- Sound friendly and human
-- No hashtags, no markdown
-- Reply with ONLY the answer text, nothing else`;
-
+// No bots — pure human chat
 let botBusy = false;
 let lastBotTime = 0;
 
-function startBots(){
-  // Register RoomBot for @tagging
-  activeUsers.add('RoomBot'); // keep clean name for tagging
-  // Post one welcome hint after 3 seconds
-  setTimeout(async()=>{
-    await publishMsg('RoomBot 🤖', "Hey! Tag me @RoomBot with any question and I will do my best to help 🌍");
-  }, 3000);
-}
-
-function maybeRespond(userText){
-  // RoomBot ONLY responds when directly @tagged — handled in sendMessage
-  // No unprompted bot messages
-  return;
-}
-
-async function fireBotReply(userMsg){
-  if(botBusy) return;
-  botBusy = true;
-  console.log('🤖 RoomBot responding to:', userMsg);
-
-  try {
-    showTyping('RoomBot');
-
-    const res = await fetch(BOT_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${SUPABASE_ANON}`
-      },
-      body: JSON.stringify({
-        system: ROOMBOT_SYSTEM,
-        userMsg: userMsg
-      })
-    });
-
-    console.log('📥 Edge status:', res.status);
-    const data = await res.json();
-    console.log('📥 Edge data:', JSON.stringify(data));
-
-    const text = (data.text || '').trim();
-    hideTyping();
-
-    if(text){
-      await publishMsg('RoomBot 🤖', text);
-      lastBotTime = Date.now();
-      console.log('✅ RoomBot posted:', text);
-    } else {
-      await publishMsg('RoomBot 🤖', "I'm not sure about that one — try Google for the most accurate info!");
-    }
-
-  } catch(e){
-    console.error('❌ RoomBot error:', e);
-    hideTyping();
-    await publishMsg('RoomBot 🤖', "Sorry, I couldn't look that up right now. Try again in a moment!").catch(()=>{});
-  } finally {
-    botBusy = false;
-    console.log('🔓 RoomBot released');
-  }
-}
-
-async function getBotMsg(){ return null; } // unused
+function startBots(){ /* no bots */ }
+function maybeRespond(){ /* no bots */ }
+async function fireBotReply(){ /* no bots */ }
+async function getBotMsg(){ return null; }
 
 
 function updateOnlineCount(n){ document.getElementById('onlineCount').textContent=n===1?'1 around the fire':`${n} around the fire`; }
