@@ -3,126 +3,395 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#1a0e07">
+<meta name="theme-color" content="#f5ede0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>OneRoomEarth 🌍</title>
-
-<!-- PWA -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoomEarth">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OneRoomEarth">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="OneRoomEarth">
-<meta name="msapplication-TileColor" content="#1a0e07">
-<meta name="msapplication-TileImage" content="/icons/icon-192.png">
-
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<title>OneRoomEarth 🌍</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --ember-deep: #1a0e07; --ember-dark: #2d1a0e; --ember-mid: #4a2c1a;
-    --ember-warm: #7a4528; --ember-glow: #c4622d; --ember-orange: #e8863a;
-    --ember-amber: #f5a94e; --ember-gold: #ffd07a; --ember-cream: #fff3e0;
+    --bg:        #f7f0e6;
+    --bg2:       #eedfc8;
+    --bg3:       #e4d0b0;
+    --surface:   #fdf8f2;
+    --border:    #d9c9ad;
+    --border2:   #c9b48e;
+    --text:      #2c1f0e;
+    --text2:     #6b4f2a;
+    --text3:     #9c7a4a;
+    --accent:    #c4622d;
+    --accent2:   #e8863a;
+    --gold:      #b8860b;
+    --gold2:     #d4a017;
+    --own-bg:    #c4622d;
+    --own-text:  #fff8f0;
+    --green:     #4a7c59;
   }
-  html, body { height: 100%; background: var(--ember-deep); font-family: 'Nunito', sans-serif; color: var(--ember-cream); overflow: hidden; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* Subtle texture overlay */
   body::before {
-    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(196,98,45,0.35) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 30% at 50% 100%, rgba(245,169,78,0.2) 0%, transparent 60%);
-    animation: fireFlicker 4s ease-in-out infinite alternate;
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 100%, rgba(196,98,45,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 30% at 20% 0%, rgba(184,134,11,0.06) 0%, transparent 60%);
   }
-  @keyframes fireFlicker { 0%{opacity:0.8;} 50%{opacity:1;} 100%{opacity:0.85;} }
-  .ember-particle { position:fixed; border-radius:50%; background:var(--ember-amber); box-shadow:0 0 6px 2px var(--ember-orange); pointer-events:none; z-index:1; animation:floatEmber linear infinite; }
-  @keyframes floatEmber { 0%{transform:translateY(0) translateX(0) scale(1);opacity:1;} 100%{transform:translateY(-100vh) translateX(var(--drift)) scale(0);opacity:0;} }
 
-  .screen { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; }
-  .screen.hidden { display:none !important; }
+  /* Floating particles - subtle warm dots */
+  .particle {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 1;
+    background: var(--accent2); opacity: 0;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.4; }
+    100% { transform: translateY(-100vh) translateX(var(--dx)) scale(0); opacity: 0; }
+  }
 
-  /* AGE GATE */
-  #ageGate { background:var(--ember-deep); }
-  .age-card { background:rgba(45,26,14,0.92); border:1px solid rgba(196,98,45,0.35); border-radius:20px; padding:2.5rem; max-width:400px; width:100%; text-align:center; box-shadow:0 0 60px rgba(196,98,45,0.15); position:relative; z-index:2; }
-  .age-globe { font-size:4rem; margin-bottom:1rem; filter:drop-shadow(0 0 20px rgba(245,169,78,0.8)); animation:gentlePulse 3s ease-in-out infinite; }
-  @keyframes gentlePulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
-  .age-title { font-family:'Lora',serif; font-size:2rem; color:var(--ember-gold); margin-bottom:0.3rem; }
-  .age-sub { font-family:'Lora',serif; font-style:italic; font-size:0.88rem; color:rgba(255,243,224,0.4); margin-bottom:2rem; }
-  .age-check-wrap { display:flex; align-items:flex-start; gap:0.8rem; margin-bottom:1rem; text-align:left; cursor:pointer; }
-  .age-check-wrap input[type=checkbox] { width:18px; height:18px; accent-color:var(--ember-orange); flex-shrink:0; margin-top:3px; cursor:pointer; }
-  .age-check-label { font-size:0.85rem; color:rgba(255,243,224,0.65); line-height:1.5; }
-  .age-check-label a { color:var(--ember-amber); }
-  .age-btn { width:100%; background:linear-gradient(135deg,var(--ember-glow),var(--ember-orange)); border:none; border-radius:12px; padding:1rem; font-family:'Nunito',sans-serif; font-size:1rem; font-weight:700; color:white; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 20px rgba(196,98,45,0.4); opacity:0.35; pointer-events:none; margin-top:0.5rem; }
-  .age-btn.ready { opacity:1; pointer-events:all; }
-  .age-btn.ready:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(196,98,45,0.6); }
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+  .screen.hidden { display: none !important; }
 
-  /* LANDING */
-  #landing { background:var(--ember-deep); }
-  .landing-glow { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:600px; height:300px; background:radial-gradient(ellipse,rgba(196,98,45,0.4) 0%,transparent 70%); pointer-events:none; animation:fireFlicker 3s ease-in-out infinite alternate; }
-  .logo-area { text-align:center; margin-bottom:2.5rem; position:relative; z-index:2; }
-  .globe-icon { font-size:5rem; display:block; margin-bottom:1rem; filter:drop-shadow(0 0 20px rgba(245,169,78,0.8)); animation:gentlePulse 3s ease-in-out infinite; }
-  .logo-title { font-family:'Lora',serif; font-size:3rem; font-weight:600; color:var(--ember-gold); text-shadow:0 0 40px rgba(255,208,122,0.5); line-height:1; margin-bottom:0.4rem; }
-  .logo-sub { font-family:'Lora',serif; font-style:italic; font-size:0.92rem; color:rgba(255,243,224,0.4); }
-  .join-card { background:rgba(45,26,14,0.88); border:1px solid rgba(196,98,45,0.3); border-radius:20px; padding:2.5rem; width:100%; max-width:420px; position:relative; z-index:2; backdrop-filter:blur(10px); box-shadow:0 0 60px rgba(196,98,45,0.15),inset 0 1px 0 rgba(255,208,122,0.08); }
-  .join-label { font-size:0.75rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ember-amber); margin-bottom:0.5rem; }
-  .join-input { width:100%; background:rgba(26,14,7,0.8); border:1.5px solid rgba(196,98,45,0.4); border-radius:12px; padding:0.9rem 1.2rem; font-family:'Nunito',sans-serif; font-size:1.05rem; color:var(--ember-cream); outline:none; transition:border-color 0.2s,box-shadow 0.2s; margin-bottom:1.2rem; }
-  .join-input::placeholder { color:rgba(255,243,224,0.22); }
-  .join-input:focus { border-color:var(--ember-orange); box-shadow:0 0 0 3px rgba(232,134,58,0.15); }
-  .join-btn { width:100%; background:linear-gradient(135deg,var(--ember-glow),var(--ember-orange)); border:none; border-radius:12px; padding:1rem; font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:700; color:white; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 20px rgba(196,98,45,0.4); }
-  .join-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(196,98,45,0.6); }
-  .join-rules { margin-top:1.2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
-  .rule-pill { font-size:0.68rem; color:rgba(255,243,224,0.3); display:flex; align-items:center; gap:0.3rem; }
+  /* ── AGE GATE ── */
+  #ageGate { background: var(--bg); }
 
-  /* CHATROOM */
-  #chatroom { display:none; flex-direction:column; height:100vh; position:relative; z-index:2; }
-  .chat-header { padding:0.85rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(196,98,45,0.18); background:rgba(26,14,7,0.72); backdrop-filter:blur(12px); flex-shrink:0; }
-  .header-left { display:flex; align-items:center; gap:0.7rem; }
-  .header-logo { font-family:'Lora',serif; font-size:1.15rem; font-weight:600; color:var(--ember-gold); }
-  .live-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 7px #4ade80; animation:livePulse 2s ease-in-out infinite; }
-  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
-  .online-count { font-size:0.76rem; color:rgba(255,243,224,0.4); }
-  .user-badge { background:rgba(196,98,45,0.18); border:1px solid rgba(196,98,45,0.32); border-radius:20px; padding:0.28rem 0.82rem; font-size:0.78rem; color:var(--ember-amber); font-weight:600; }
-  .messages-area { flex:1; overflow-y:auto; padding:1.2rem 1.5rem; display:flex; flex-direction:column; gap:0.45rem; scroll-behavior:smooth; }
-  .messages-area::-webkit-scrollbar { width:3px; }
-  .messages-area::-webkit-scrollbar-thumb { background:rgba(196,98,45,0.28); border-radius:4px; }
-  .system-msg { text-align:center; font-size:0.71rem; color:rgba(255,243,224,0.25); font-style:italic; padding:0.22rem; font-family:'Lora',serif; }
-  .chat-msg { display:flex; flex-direction:column; max-width:78%; animation:msgAppear 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes msgAppear { from{opacity:0;transform:translateY(10px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
-  .chat-msg.own { align-self:flex-end; align-items:flex-end; }
-  .chat-msg.other { align-self:flex-start; align-items:flex-start; }
-  .msg-name { font-size:0.67rem; font-weight:700; letter-spacing:0.04em; margin-bottom:0.22rem; padding:0 0.35rem; color:var(--ember-amber); }
-  .msg-name.own-name { color:var(--ember-gold); }
-  .msg-bubble { padding:0.62rem 0.95rem; border-radius:18px; font-size:0.9rem; line-height:1.5; word-break:break-word; }
-  .other .msg-bubble { background:rgba(74,44,26,0.68); border:1px solid rgba(196,98,45,0.2); border-bottom-left-radius:4px; }
-  .own .msg-bubble { background:linear-gradient(135deg,rgba(196,98,45,0.58),rgba(122,69,40,0.68)); border:1px solid rgba(245,169,78,0.16); border-bottom-right-radius:4px; }
-  .msg-meta { font-size:0.61rem; color:rgba(255,243,224,0.2); padding:0.16rem 0.35rem 0; display:flex; align-items:center; gap:0.4rem; }
-  .expiry-bar-wrap { width:52px; height:2px; background:rgba(255,243,224,0.07); border-radius:2px; overflow:hidden; }
-  .expiry-bar { height:100%; background:linear-gradient(90deg,var(--ember-orange),var(--ember-amber)); border-radius:2px; transition:width 1s linear; }
-  .warn-banner { margin:0 1.5rem 0.5rem; padding:0.65rem 1rem; border-radius:12px; background:rgba(239,68,68,0.13); border:1px solid rgba(239,68,68,0.28); font-size:0.78rem; color:#fca5a5; display:none; align-items:center; gap:0.5rem; flex-shrink:0; }
-  .warn-banner.show { display:flex; }
-  .warn-countdown { font-weight:700; color:#f87171; }
-  .typing-indicator { display:none; align-items:center; gap:0.5rem; padding:0.35rem 1.5rem; font-size:0.73rem; color:rgba(255,243,224,0.28); font-style:italic; font-family:'Lora',serif; flex-shrink:0; }
-  .typing-dots span { display:inline-block; width:4px; height:4px; background:var(--ember-orange); border-radius:50%; animation:typingBounce 1.2s infinite; opacity:0.6; }
-  .typing-dots span:nth-child(2){animation-delay:0.2s;} .typing-dots span:nth-child(3){animation-delay:0.4s;}
+  .age-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    padding: 2.8rem 2.5rem;
+    max-width: 420px; width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(44,31,14,0.1), 0 2px 8px rgba(44,31,14,0.06);
+    position: relative; z-index: 2;
+  }
+
+  .age-globe {
+    font-size: 3.5rem; margin-bottom: 1rem;
+    filter: drop-shadow(0 4px 12px rgba(196,98,45,0.3));
+    animation: gentleBob 3s ease-in-out infinite;
+  }
+  @keyframes gentleBob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+
+  .age-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700;
+    color: var(--text); margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+  }
+  .age-sub {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 0.88rem;
+    color: var(--text3); margin-bottom: 2rem;
+  }
+
+  .age-check-wrap {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    margin-bottom: 0.85rem; text-align: left; cursor: pointer;
+    padding: 0.75rem; border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .age-check-wrap:hover { border-color: var(--accent2); background: #fdf4ec; }
+  .age-check-wrap input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--accent); flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+  .age-check-label { font-size: 0.83rem; color: var(--text2); line-height: 1.5; }
+  .age-check-label strong { color: var(--text); }
+  .age-check-label a { color: var(--accent); text-decoration: none; }
+
+  .age-btn {
+    width: 100%; margin-top: 0.5rem;
+    background: var(--accent);
+    border: none; border-radius: 14px; padding: 0.95rem;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+    color: white; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(196,98,45,0.3);
+    opacity: 0.35; pointer-events: none; letter-spacing: 0.01em;
+  }
+  .age-btn.ready { opacity: 1; pointer-events: all; }
+  .age-btn.ready:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(196,98,45,0.4); }
+
+  /* ── LANDING ── */
+  #landing { background: var(--bg); }
+
+  .landing-deco {
+    position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%);
+    width: 500px; height: 300px;
+    background: radial-gradient(ellipse, rgba(196,98,45,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .logo-area { text-align: center; margin-bottom: 2.5rem; position: relative; z-index: 2; }
+  .globe-icon {
+    font-size: 4.5rem; display: block; margin-bottom: 0.8rem;
+    filter: drop-shadow(0 4px 16px rgba(196,98,45,0.25));
+    animation: gentleBob 3s ease-in-out infinite;
+  }
+  .logo-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem; font-weight: 700;
+    color: var(--text); letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 0.4rem;
+  }
+  .logo-sub {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 0.9rem;
+    color: var(--text3);
+  }
+
+  .join-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 24px; padding: 2.2rem;
+    width: 100%; max-width: 420px;
+    position: relative; z-index: 2;
+    box-shadow: 0 8px 40px rgba(44,31,14,0.1);
+  }
+
+  .join-label {
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text3); margin-bottom: 0.5rem;
+  }
+
+  .join-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 0.85rem 1.1rem;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem;
+    color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    margin-bottom: 1rem;
+  }
+  .join-input::placeholder { color: var(--text3); opacity: 0.6; }
+  .join-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,98,45,0.1); }
+
+  .join-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none; border-radius: 12px; padding: 0.9rem;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+    color: white; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(196,98,45,0.3); letter-spacing: 0.01em;
+  }
+  .join-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(196,98,45,0.4); }
+
+  .join-rules {
+    margin-top: 1rem; display: flex; gap: 0.8rem;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .rule-pill {
+    font-size: 0.68rem; color: var(--text3);
+    display: flex; align-items: center; gap: 0.3rem;
+    background: var(--bg2); border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+  }
+
+  /* ── CHATROOM ── */
+  #chatroom { display: none; flex-direction: column; height: 100vh; position: relative; z-index: 2; }
+
+  .chat-header {
+    padding: 0.85rem 1.4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    box-shadow: 0 1px 8px rgba(44,31,14,0.06);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 0.65rem; }
+  .header-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--text); letter-spacing: -0.01em;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 6px var(--green);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .online-count { font-size: 0.74rem; color: var(--text3); font-weight: 400; }
+
+  .user-badge {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 0.28rem 0.8rem;
+    font-size: 0.76rem; color: var(--accent); font-weight: 600;
+  }
+
+  /* Messages */
+  .messages-area {
+    flex: 1; overflow-y: auto; padding: 1.2rem 1.3rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    scroll-behavior: smooth;
+    background: var(--bg);
+  }
+  .messages-area::-webkit-scrollbar { width: 3px; }
+  .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .system-msg {
+    text-align: center; font-size: 0.7rem;
+    color: var(--text3); font-style: italic;
+    padding: 0.2rem; font-family: 'Playfair Display', serif;
+  }
+
+  .chat-msg {
+    display: flex; flex-direction: column; max-width: 78%;
+    animation: msgAppear 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes msgAppear { from{opacity:0;transform:translateY(8px) scale(0.96);} to{opacity:1;transform:translateY(0) scale(1);} }
+
+  .chat-msg.own { align-self: flex-end; align-items: flex-end; }
+  .chat-msg.other { align-self: flex-start; align-items: flex-start; }
+
+  .msg-name {
+    font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 0.03em; margin-bottom: 0.2rem;
+    padding: 0 0.35rem; color: var(--text3);
+  }
+  .msg-name.own-name { color: var(--accent); }
+
+  .msg-bubble {
+    padding: 0.65rem 1rem; border-radius: 18px;
+    font-size: 0.92rem; line-height: 1.55;
+    word-break: break-word; font-weight: 400;
+  }
+
+  .other .msg-bubble {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(44,31,14,0.06);
+  }
+
+  .own .msg-bubble {
+    background: var(--accent);
+    border: none;
+    border-bottom-right-radius: 4px;
+    color: var(--own-text);
+    box-shadow: 0 2px 10px rgba(196,98,45,0.3);
+  }
+
+  .msg-meta {
+    font-size: 0.6rem; color: var(--text3);
+    padding: 0.15rem 0.35rem 0;
+    display: flex; align-items: center; gap: 0.4rem; opacity: 0.7;
+  }
+
+  .expiry-bar-wrap {
+    width: 48px; height: 2px;
+    background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .expiry-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px; transition: width 1s linear;
+  }
+
+  /* Warning */
+  .warn-banner {
+    margin: 0 1.3rem 0.5rem; padding: 0.65rem 1rem; border-radius: 12px;
+    background: #fef2f2; border: 1.5px solid #fca5a5;
+    font-size: 0.78rem; color: #b91c1c;
+    display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;
+  }
+  .warn-banner.show { display: flex; }
+  .warn-countdown { font-weight: 700; }
+
+  /* Typing */
+  .typing-indicator {
+    display: none; align-items: center; gap: 0.5rem;
+    padding: 0.3rem 1.3rem; font-size: 0.72rem;
+    color: var(--text3); font-style: italic;
+    font-family: 'Playfair Display', serif; flex-shrink: 0;
+  }
+  .typing-dots span {
+    display: inline-block; width: 4px; height: 4px;
+    background: var(--accent2); border-radius: 50%;
+    animation: typingBounce 1.2s infinite; opacity: 0.7;
+  }
+  .typing-dots span:nth-child(2){animation-delay:0.2s;}
+  .typing-dots span:nth-child(3){animation-delay:0.4s;}
   @keyframes typingBounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-5px);} }
-  .input-area { padding:0.75rem 1.5rem 1.1rem; background:rgba(26,14,7,0.72); backdrop-filter:blur(12px); border-top:1px solid rgba(196,98,45,0.13); flex-shrink:0; }
-  .input-wrap { display:flex; gap:0.6rem; align-items:flex-end; background:rgba(45,26,14,0.8); border:1.5px solid rgba(196,98,45,0.33); border-radius:16px; padding:0.52rem 0.58rem; transition:border-color 0.2s,box-shadow 0.2s; }
-  .input-wrap:focus-within { border-color:var(--ember-orange); box-shadow:0 0 0 3px rgba(232,134,58,0.1); }
-  .msg-input { flex:1; background:none; border:none; outline:none; font-family:'Nunito',sans-serif; font-size:0.92rem; color:var(--ember-cream); resize:none; max-height:110px; line-height:1.5; padding:0.18rem 0.28rem; }
-  .msg-input::placeholder { color:rgba(255,243,224,0.2); }
-  .msg-input:disabled { opacity:0.4; }
-  .send-btn { width:35px; height:35px; border-radius:10px; background:linear-gradient(135deg,var(--ember-glow),var(--ember-orange)); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; box-shadow:0 2px 10px rgba(196,98,45,0.38); }
-  .send-btn:hover { transform:scale(1.06); }
-  .send-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
-  .send-btn svg { width:16px; height:16px; fill:white; }
-  .char-hint { text-align:right; font-size:0.63rem; color:rgba(255,243,224,0.16); margin-top:0.32rem; padding:0 0.28rem; }
-  .fading-out { animation:messageFade 2s ease-out forwards !important; }
+
+  /* Input */
+  .input-area {
+    padding: 0.75rem 1.3rem 1rem;
+    background: var(--surface);
+    border-top: 1.5px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    display: flex; gap: 0.6rem; align-items: flex-end;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 0.5rem 0.55rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(196,98,45,0.1);
+  }
+
+  .msg-input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    color: var(--text); resize: none; max-height: 110px;
+    line-height: 1.5; padding: 0.2rem 0.28rem;
+  }
+  .msg-input::placeholder { color: var(--text3); opacity: 0.6; }
+  .msg-input:disabled { opacity: 0.4; }
+
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(196,98,45,0.3);
+  }
+  .send-btn:hover { background: var(--accent2); transform: scale(1.05); }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .send-btn svg { width: 15px; height: 15px; fill: white; }
+
+  .char-hint {
+    text-align: right; font-size: 0.62rem;
+    color: var(--text3); margin-top: 0.3rem;
+    padding: 0 0.25rem; opacity: 0.6;
+  }
+
+  .fading-out { animation: messageFade 2s ease-out forwards !important; }
   @keyframes messageFade { from{opacity:1;} to{opacity:0;transform:scale(0.95);max-height:0;margin:0;padding:0;overflow:hidden;} }
-  .scroll-btn { position:fixed; bottom:82px; right:16px; background:var(--ember-glow); border:none; border-radius:50%; width:36px; height:36px; cursor:pointer; display:none; align-items:center; justify-content:center; font-size:0.95rem; box-shadow:0 4px 16px rgba(196,98,45,0.5); z-index:20; animation:bounceDown 1s ease-in-out infinite; }
+
+  .scroll-btn {
+    position: fixed; bottom: 80px; right: 15px;
+    background: var(--accent); border: none; border-radius: 50%;
+    width: 35px; height: 35px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    font-size: 0.9rem; color: white;
+    box-shadow: 0 4px 14px rgba(196,98,45,0.4); z-index: 20;
+    animation: bounceDown 1s ease-in-out infinite;
+  }
   @keyframes bounceDown { 0%,100%{transform:translateY(0);} 50%{transform:translateY(4px);} }
 </style>
 </head>
 <body>
-<div id="embers"></div>
+<div id="particles"></div>
 
 <!-- AGE GATE -->
 <div id="ageGate" class="screen">
@@ -136,7 +405,7 @@
     </label>
     <label class="age-check-wrap">
       <input type="checkbox" id="rulesCheck">
-      <span class="age-check-label">I will not share personal contact info (phone numbers, emails, social handles) and will be respectful to others.</span>
+      <span class="age-check-label">I will <strong>not share</strong> personal contact info and will be respectful to others.</span>
     </label>
     <button class="age-btn" id="ageBtn">Enter the Room 🔥</button>
   </div>
@@ -144,7 +413,7 @@
 
 <!-- LANDING -->
 <div id="landing" class="screen hidden">
-  <div class="landing-glow"></div>
+  <div class="landing-deco"></div>
   <div class="logo-area">
     <span class="globe-icon">🌍</span>
     <div class="logo-title">OneRoomEarth</div>
@@ -153,7 +422,7 @@
   <div class="join-card">
     <div class="join-label">Your name in the room</div>
     <input class="join-input" id="nameInput" type="text" placeholder="e.g. wandering_luca" maxlength="28" autocomplete="off"/>
-    <button class="join-btn" id="joinBtn">🔥 Pull up a chair</button>
+    <button class="join-btn" id="joinBtn">Pull up a chair 🔥</button>
     <div class="join-rules">
       <span class="rule-pill">🌍 One room</span>
       <span class="rule-pill">⏳ Fades in 5 min</span>
@@ -173,51 +442,57 @@
     </div>
     <div class="user-badge" id="userBadge">you</div>
   </div>
+
   <div class="messages-area" id="messagesArea"></div>
+
   <div class="warn-banner" id="warnBanner">
-    🚫 Sharing contact info isn't allowed here. &nbsp; Try again in <span class="warn-countdown" id="warnCountdown">60</span>s
+    🚫 Contact info not allowed here. &nbsp; Try again in <span class="warn-countdown" id="warnCountdown">60</span>s
   </div>
+
   <div class="typing-indicator" id="typingIndicator">
     <div class="typing-dots"><span></span><span></span><span></span></div>
     <span id="typingText">someone is typing...</span>
   </div>
+
   <div class="input-area">
     <div class="input-wrap">
       <textarea class="msg-input" id="msgInput" placeholder="Say something to the world..." rows="1" maxlength="500"></textarea>
-      <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      <button class="send-btn" id="sendBtn">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
     </div>
     <div class="char-hint" id="charHint">500 characters remaining</div>
   </div>
 </div>
+
 <button class="scroll-btn" id="scrollBtn">↓</button>
 
 <script>
-// ── Only public keys here — Anthropic key is safely on the server ──
+// ── CONFIG ──
 const SUPABASE_URL  = 'https://szavjquwqemgpezubuqy.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_96qX5ZrBiI_ckscQRor-Vw_HcLhTg8j';
-// Bot calls go through our secure Edge Function — no secret key in browser
 const BOT_ENDPOINT  = `${SUPABASE_URL}/functions/v1/chat-bot`;
-
 const FADE_MS = 5 * 60 * 1000;
+
 let myName = '', messages = [], msgIdCounter = 0;
 let blockedUntil = 0, warnTimer = null, supaClient = null;
 
-// Embers
+// Subtle particles
 (()=>{
-  const c=document.getElementById('embers');
+  const c = document.getElementById('particles');
   function mk(){
-    const e=document.createElement('div'); e.className='ember-particle';
-    const dur=4+Math.random()*6;
-    e.style.cssText=`left:${20+Math.random()*60}%;bottom:0;--drift:${(Math.random()-.5)*120}px;animation-duration:${dur}s;animation-delay:${Math.random()*4}s;opacity:${0.4+Math.random()*0.5};width:${2+Math.random()*3}px;height:${2+Math.random()*3}px;`;
-    c.appendChild(e); setTimeout(()=>e.remove(),dur*1500);
+    const e = document.createElement('div'); e.className = 'particle';
+    const dur = 8 + Math.random() * 10;
+    e.style.cssText = `left:${10+Math.random()*80}%;bottom:0;--dx:${(Math.random()-.5)*80}px;animation-duration:${dur}s;animation-delay:${Math.random()*6}s;width:${2+Math.random()*3}px;height:${2+Math.random()*3}px;opacity:0.3;`;
+    c.appendChild(e); setTimeout(()=>e.remove(), dur*1500);
   }
-  setInterval(mk,700); for(let i=0;i<6;i++) setTimeout(mk,i*300);
+  setInterval(mk, 2000); for(let i=0;i<4;i++) setTimeout(mk,i*800);
 })();
 
 // Age gate
 const ageCheck=document.getElementById('ageCheck'), rulesCheck=document.getElementById('rulesCheck'), ageBtn=document.getElementById('ageBtn');
-function refreshAgeBtn(){ ageBtn.classList.toggle('ready', ageCheck.checked && rulesCheck.checked); }
-ageCheck.addEventListener('change',refreshAgeBtn); rulesCheck.addEventListener('change',refreshAgeBtn);
+function refreshBtn(){ ageBtn.classList.toggle('ready', ageCheck.checked && rulesCheck.checked); }
+ageCheck.addEventListener('change',refreshBtn); rulesCheck.addEventListener('change',refreshBtn);
 ageBtn.addEventListener('click',()=>{
   if(!ageCheck.checked||!rulesCheck.checked) return;
   document.getElementById('ageGate').classList.add('hidden');
@@ -225,63 +500,74 @@ ageBtn.addEventListener('click',()=>{
 });
 
 // Join
-document.getElementById('joinBtn').addEventListener('click',joinRoom);
-document.getElementById('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') joinRoom(); });
+document.getElementById('joinBtn').addEventListener('click', joinRoom);
+document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(); });
 
 async function joinRoom(){
-  const raw=document.getElementById('nameInput').value.trim().replace(/\s+/g,'_');
-  if(!raw){ const el=document.getElementById('nameInput'); el.style.borderColor='#e8863a'; setTimeout(()=>el.style.borderColor='',1000); return; }
-  myName=raw.slice(0,28);
-  document.getElementById('userBadge').textContent='🔥 '+myName;
+  const raw = document.getElementById('nameInput').value.trim().replace(/\s+/g,'_');
+  if(!raw){ const el=document.getElementById('nameInput'); el.style.borderColor='var(--accent)'; setTimeout(()=>el.style.borderColor='',1000); return; }
+  myName = raw.slice(0,28);
+  document.getElementById('userBadge').textContent = '🔥 ' + myName;
   document.getElementById('landing').classList.add('hidden');
-  document.getElementById('chatroom').style.display='flex';
+  document.getElementById('chatroom').style.display = 'flex';
   await initSupabase();
   document.getElementById('msgInput').focus();
 }
 
-// Supabase
+// ── SUPABASE (fixed CDN URL) ──
 async function initSupabase(){
   addSystemMsg('⟳ Connecting to the room...');
   try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/umd/supabase.min.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
     supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    const {data} = await supaClient
+    // Load recent messages (last 5 min)
+    const { data, error } = await supaClient
       .from('messages').select('*')
       .gte('created_at', new Date(Date.now()-FADE_MS).toISOString())
       .order('created_at',{ascending:true}).limit(60);
 
+    if(error) throw error;
     if(data) data.forEach(m => addMessage(m.name, m.text, m.name===myName, m.id, new Date(m.created_at).getTime()));
 
-    supaClient.channel('public:messages')
+    // Realtime subscription
+    supaClient.channel('room:messages')
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, p => {
-        const m=p.new;
-        if(m.name!==myName) addMessage(m.name,m.text,false,m.id,new Date(m.created_at).getTime());
+        const m = p.new;
+        if(m.name !== myName) addMessage(m.name, m.text, false, m.id, new Date(m.created_at).getTime());
       })
       .subscribe(status => {
-        if(status==='SUBSCRIBED'){
+        if(status === 'SUBSCRIBED'){
           document.querySelectorAll('.system-msg').forEach((el,i,a)=>{ if(i===a.length-1) el.remove(); });
           addSystemMsg('🔥 Welcome, '+myName+'! You pulled up a chair.');
           addSystemMsg('Messages vanish after 5 minutes — like campfire smoke.');
-          updateOnlineCount(8+Math.floor(Math.random()*5));
+          updateOnlineCount(8+Math.floor(Math.random()*6));
           setTimeout(startBots, 1500);
+        } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+          throw new Error('Channel failed');
         }
       });
   } catch(err){
-    addSystemMsg('⚠️ Connection failed. Running in demo mode.');
-    updateOnlineCount(6+Math.floor(Math.random()*4));
-    setTimeout(startBots,1000);
+    console.error('Supabase error:', err);
+    document.querySelectorAll('.system-msg').forEach((el,i,a)=>{ if(i===a.length-1) el.remove(); });
+    addSystemMsg('⚠️ Could not connect. Check your internet and reload.');
   }
 }
 
-async function publishMsg(name,text){
+async function publishMsg(name, text){
   if(!supaClient) return;
-  try { await supaClient.from('messages').insert({name,text}); } catch(e){ console.error(e); }
+  try { await supaClient.from('messages').insert({name, text}); } catch(e){ console.error(e); }
 }
 
-function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
 
-// Moderation
+// ── MODERATION ──
 const BAD=[
   /(\+?[\d][\d\s\-().]{6,}[\d])/,
   /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
@@ -291,40 +577,40 @@ const BAD=[
 function isBad(t){ return BAD.some(p=>p.test(t)); }
 
 function triggerBlock(){
-  blockedUntil=Date.now()+60000;
-  document.getElementById('sendBtn').disabled=true;
-  document.getElementById('msgInput').disabled=true;
-  const banner=document.getElementById('warnBanner'); banner.classList.add('show');
-  let s=60; document.getElementById('warnCountdown').textContent=s;
+  blockedUntil = Date.now()+60000;
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('msgInput').disabled = true;
+  const banner = document.getElementById('warnBanner'); banner.classList.add('show');
+  let s = 60; document.getElementById('warnCountdown').textContent = s;
   if(warnTimer) clearInterval(warnTimer);
-  warnTimer=setInterval(()=>{
-    s--; document.getElementById('warnCountdown').textContent=s;
+  warnTimer = setInterval(()=>{
+    s--; document.getElementById('warnCountdown').textContent = s;
     if(s<=0){ clearInterval(warnTimer); banner.classList.remove('show'); document.getElementById('sendBtn').disabled=false; document.getElementById('msgInput').disabled=false; blockedUntil=0; }
   },1000);
 }
 
-// Send
-document.getElementById('sendBtn').addEventListener('click',sendMessage);
-document.getElementById('msgInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
-document.getElementById('msgInput').addEventListener('input',function(){
-  document.getElementById('charHint').textContent=`${500-this.value.length} characters remaining`;
+// ── SEND ──
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('msgInput').addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+document.getElementById('msgInput').addEventListener('input', function(){
+  document.getElementById('charHint').textContent = `${500-this.value.length} characters remaining`;
   this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,110)+'px';
 });
 
 async function sendMessage(){
   if(Date.now()<blockedUntil) return;
-  const input=document.getElementById('msgInput'), text=input.value.trim();
+  const input = document.getElementById('msgInput'), text = input.value.trim();
   if(!text) return;
   if(isBad(text)){ triggerBlock(); input.value=''; input.style.height='auto'; return; }
-  addMessage(myName,text,true);
-  await publishMsg(myName,text);
+  addMessage(myName, text, true);
+  await publishMsg(myName, text);
   input.value=''; input.style.height='auto';
   document.getElementById('charHint').textContent='500 characters remaining';
   maybeRespond(text);
 }
 
-// Messages
-function addMessage(name,text,own=false,extId=null,extTs=null){
+// ── MESSAGES ──
+function addMessage(name, text, own=false, extId=null, extTs=null){
   const id=extId||(++msgIdCounter), ts=extTs||Date.now();
   const wrap=document.createElement('div'); wrap.className='chat-msg '+(own?'own':'other');
   const nameEl=document.createElement('div'); nameEl.className='msg-name '+(own?'own-name':''); nameEl.textContent=name;
@@ -345,8 +631,8 @@ function startExpiry(entry){
     const rem=FADE_MS-(Date.now()-entry.ts);
     if(rem<=0){clearInterval(iv);expire(entry);return;}
     entry.barEl.style.width=(rem/FADE_MS*100)+'%';
-    if(rem<FADE_MS*0.2) entry.barEl.style.background='linear-gradient(90deg,#ef4444,#f87171)';
-    else if(rem<FADE_MS*0.5) entry.barEl.style.background='linear-gradient(90deg,#f59e0b,#fbbf24)';
+    if(rem<FADE_MS*0.2) entry.barEl.style.background='#ef4444';
+    else if(rem<FADE_MS*0.5) entry.barEl.style.background='#f59e0b';
     const s=Math.ceil(rem/1000), m=Math.floor(s/60);
     entry.timeEl.textContent=`fades ${m}:${String(s%60).padStart(2,'0')}`;
   },1000);
@@ -355,7 +641,7 @@ function startExpiry(entry){
 function expire(entry){ entry.el.classList.add('fading-out'); setTimeout(()=>{ entry.el.remove(); messages=messages.filter(m=>m.id!==entry.id); },2000); }
 function addSystemMsg(t){ const el=document.createElement('div'); el.className='system-msg'; el.textContent=t; document.getElementById('messagesArea').appendChild(el); scrollDown(); }
 
-// ── AI BOTS (call secure Edge Function — no API key in browser) ──
+// ── AI BOTS ──
 const BOTS=[
   {name:'ember_sage',    label:'🤖', type:'philosophical', labeled:true },
   {name:'kofi_accra',   label:'',   type:'warm',          labeled:false},
@@ -369,71 +655,87 @@ const BOTS=[
 ];
 
 const BOT_SYSTEM={
-  philosophical:`You are a thoughtful, philosophical participant in a global one-room chat called OneRoomEarth. Messages disappear after 5 minutes. Ask deep, open questions about life, humanity, or existence. Keep it SHORT — 1 sentence max. No hashtags. Sound natural. Reply with only the message text, nothing else.`,
-  warm:`You are warm, friendly, and welcoming in a global chat room called OneRoomEarth where strangers gather around a virtual campfire. Compliment people, welcome newcomers, share cozy thoughts. 1 sentence max. Sound genuinely human. Occasionally use 1 emoji. Reply with only the message text, nothing else.`,
-  witty:`You are funny and witty in a global chat room called OneRoomEarth. Make clever observations or light jokes. 1 sentence max. Don't be cringe. Sound natural. Reply with only the message text, nothing else.`,
+  philosophical:`You are a thoughtful participant in a global one-room chat called OneRoomEarth. Messages disappear after 5 minutes. You ask deep open questions about life or humanity. STRICT RULES: Max 2 short lines. No hashtags. Sound like a real human. Reply with ONLY the message text, nothing else.`,
+  warm:`You are a warm friendly person in a global chat room called OneRoomEarth. Welcome people, share cozy thoughts, reply kindly to what others say. STRICT RULES: Max 2 short lines. Sound genuinely human. 1 emoji max. Reply with ONLY the message text, nothing else.`,
+  witty:`You are funny and witty in a global chat room called OneRoomEarth. Make clever short observations or jokes about what people say. STRICT RULES: Max 2 short lines. Don't be cringe. Sound natural. Reply with ONLY the message text, nothing else.`,
 };
 
-const STARTERS=["Does anyone else feel strangely at home here?","Hello from a rainy Tuesday 🌧️","What's the last thing that genuinely made you smile?","There are people in 195 countries right now. Wild.","If this room had a smell, what would it be?","Just had the best coffee of my life. Small wins.","Anyone else find silence louder at night?","We're all strangers and somehow that's comforting.","What time is it where you are right now?","The fact that this room exists makes me happy."];
+// When replying to a user, be conversational and directly address what they said
+const BOT_REPLY_INSTRUCTION = `\n\nIMPORTANT: Directly respond to or react to what the user said. Make it feel like a real conversation. Keep it to 1-2 short lines maximum.`;
+
+const STARTERS=[
+  "Does anyone else feel strangely at home here?",
+  "Hello from wherever I am 🌧️",
+  "What's the last thing that genuinely made you smile?",
+  "There are people in 195 countries right now. Wild.",
+  "Just had the best coffee of my life. Small wins.",
+  "Anyone else find silence louder at night?",
+  "We're all strangers and somehow that's comforting.",
+  "What time is it where you are right now?",
+  "The fact that this room exists makes me happy.",
+  "What's one thing you're looking forward to this week?",
+];
 
 const FALLBACKS={
-  philosophical:["What does it mean to truly listen?","Are we here out of curiosity or loneliness?","Every message lives 5 minutes — kind of like real conversations.","What's something you wish strangers knew about you?"],
-  warm:["Hey everyone 🔥 glad to be here.","Hope whoever's reading this is having a decent day.","This place feels like a campfire. I love it.","Welcome to anyone who just arrived!","Sending good energy to this whole room 🌍"],
-  witty:["This is basically the world's longest group chat no one asked for and everyone needed.","5 minute messages — the real Snapchat was the strangers we met along the way.","My therapist said 'put yourself out there'. So. Hi.","Plot twist: some of you are reading this from tomorrow."],
+  philosophical:["What does it mean to truly listen?","Are we here out of curiosity or loneliness?","Every message lives 5 minutes — kind of like real conversations."],
+  warm:["Hey everyone, glad to be here 🔥","Hope whoever's reading this is having a decent day.","Welcome to anyone who just arrived!"],
+  witty:["This is the world's longest group chat no one asked for and everyone needed.","My therapist said put yourself out there. So. Hi.","Plot twist: some of you are reading this from tomorrow."],
 };
 
 let botStarted=false;
 function startBots(){
   if(botStarted) return; botStarted=true;
-  let delay=1200;
-  [...STARTERS].sort(()=>Math.random()-.5).slice(0,4).forEach(text=>{
+  let delay=1500;
+  [...STARTERS].sort(()=>Math.random()-.5).slice(0,3).forEach(text=>{
     const bot=BOTS[Math.floor(Math.random()*BOTS.length)];
     setTimeout(async()=>{
       const dn=bot.labeled?`${bot.name} ${bot.label}`:bot.name;
       addMessage(dn,text,false); await publishMsg(dn,text);
     },delay);
-    delay+=2200+Math.random()*3000;
+    delay+=2500+Math.random()*3000;
   });
   setInterval(async()=>{
-    if(Math.random()<0.48){
+    if(Math.random()<0.45){
       const bot=BOTS[Math.floor(Math.random()*BOTS.length)];
       showTyping(bot.name);
       setTimeout(async()=>{
         hideTyping();
-        const text=await getBotMsg(bot);
+        const text=await getBotMsg(bot, null);
         const dn=bot.labeled?`${bot.name} ${bot.label}`:bot.name;
         addMessage(dn,text,false); await publishMsg(dn,text);
-      },1500+Math.random()*2500);
+      },1800+Math.random()*2500);
     }
-    updateOnlineCount(BOTS.length+1+Math.floor(Math.random()*7));
-  },13000);
+    updateOnlineCount(BOTS.length+1+Math.floor(Math.random()*8));
+  },15000);
 }
 
 function maybeRespond(userText){
-  if(Math.random()<0.55){
+  // 65% chance a bot replies directly to the user
+  if(Math.random()<0.65){
     const bot=BOTS[Math.floor(Math.random()*BOTS.length)];
     setTimeout(()=>{
       showTyping(bot.name);
       setTimeout(async()=>{
         hideTyping();
-        const text=await getBotMsg(bot,userText);
+        const text=await getBotMsg(bot, userText);
         const dn=bot.labeled?`${bot.name} ${bot.label}`:bot.name;
         addMessage(dn,text,false); await publishMsg(dn,text);
-      },1500+Math.random()*2000);
-    },3000+Math.random()*7000);
+      },1200+Math.random()*1800);
+    },1500+Math.random()*4000);
   }
 }
 
 async function getBotMsg(bot, userMsg=null){
   try {
-    // Calls our secure Edge Function — Anthropic key never touches the browser
-    const res = await fetch(BOT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-      body: JSON.stringify({ system: BOT_SYSTEM[bot.type], userMsg: userMsg || null })
+    const system = BOT_SYSTEM[bot.type] + (userMsg ? BOT_REPLY_INSTRUCTION : '');
+    const res=await fetch(BOT_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON},
+      body:JSON.stringify({system, userMsg: userMsg||null})
     });
-    const data = await res.json();
-    return data.text || getFallback(bot.type);
+    if(!res.ok) throw new Error('Edge function error');
+    const data=await res.json();
+    return data.text||getFallback(bot.type);
   } catch { return getFallback(bot.type); }
 }
 
@@ -447,54 +749,36 @@ area.addEventListener('scroll',()=>{ scrollBtn.style.display=(area.scrollHeight-
 scrollBtn.addEventListener('click',scrollDown);
 function scrollDown(){ if(area.scrollHeight-area.scrollTop-area.clientHeight<200||messages.length<4) area.scrollTop=area.scrollHeight; else scrollBtn.style.display='flex'; }
 
-// ── PWA Service Worker Registration ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('✅ SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
+// PWA Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(e=>console.log('SW:',e));
   });
 }
 
-// ── PWA Install Prompt ──
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show install banner after user enters the room
-  setTimeout(showInstallBanner, 30000);
+// PWA Install prompt
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  setTimeout(showInstallBanner, 40000);
 });
 
-function showInstallBanner() {
-  if (!deferredPrompt) return;
-  const banner = document.createElement('div');
-  banner.id = 'installBanner';
-  banner.style.cssText = `
-    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
-    background:rgba(45,26,14,0.97); border:1px solid rgba(196,98,45,0.5);
-    border-radius:16px; padding:0.8rem 1.2rem; z-index:100;
-    display:flex; align-items:center; gap:0.8rem;
-    box-shadow:0 8px 32px rgba(196,98,45,0.3);
-    font-size:0.82rem; color:#fff3e0; max-width:320px;
-    animation:msgAppear 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  `;
-  banner.innerHTML = `
-    <span style="font-size:1.4rem">📲</span>
-    <span style="flex:1">Install <strong style="color:#ffd07a">OneRoomEarth</strong> on your home screen for quick access!</span>
-    <button onclick="installPWA()" style="background:linear-gradient(135deg,#c4622d,#e8863a);border:none;border-radius:8px;padding:0.4rem 0.8rem;color:white;font-weight:700;cursor:pointer;font-size:0.8rem;white-space:nowrap;">Install</button>
-    <button onclick="document.getElementById('installBanner').remove()" style="background:none;border:none;color:rgba(255,243,224,0.4);cursor:pointer;font-size:1.1rem;padding:0 0.2rem;">✕</button>
-  `;
-  document.body.appendChild(banner);
+function showInstallBanner(){
+  if(!deferredPrompt) return;
+  const b=document.createElement('div');
+  b.id='installBanner';
+  b.style.cssText=`position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:0.8rem 1.1rem;z-index:100;display:flex;align-items:center;gap:0.8rem;box-shadow:0 8px 28px rgba(44,31,14,0.15);font-size:0.8rem;color:var(--text);max-width:310px;animation:msgAppear 0.4s cubic-bezier(0.34,1.56,0.64,1);`;
+  b.innerHTML=`<span style="font-size:1.3rem">📲</span><span style="flex:1">Install <strong>OneRoomEarth</strong> on your home screen!</span><button onclick="installPWA()" style="background:var(--accent);border:none;border-radius:8px;padding:0.4rem 0.75rem;color:white;font-weight:600;cursor:pointer;font-size:0.78rem;white-space:nowrap;">Install</button><button onclick="document.getElementById('installBanner').remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:0 0.1rem;">✕</button>`;
+  document.body.appendChild(b);
 }
 
-async function installPWA() {
-  if (!deferredPrompt) return;
+async function installPWA(){
+  if(!deferredPrompt) return;
   deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  const banner = document.getElementById('installBanner');
-  if (banner) banner.remove();
-  if (outcome === 'accepted') addSystemMsg('🎉 App installed! Find it on your home screen.');
+  const {outcome}=await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  const b=document.getElementById('installBanner'); if(b) b.remove();
+  if(outcome==='accepted') addSystemMsg('🎉 App installed! Find it on your home screen.');
 }
 </script>
 </body>
